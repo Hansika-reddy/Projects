@@ -2,6 +2,7 @@
 #include <stack>
 #include <queue>
 #include <string>
+#include <map>
 
 class Song {
 public:
@@ -9,8 +10,14 @@ public:
     Song* next;
     Song* prev;
 
-     Song(const std::string& t) : title(t), next(nullptr), prev(nullptr) {}
+    // Constructor
+    Song(const std::string& t) {
+        title = t;
+        next = nullptr;
+        prev = nullptr;
+    }
 };
+
 class DoublyLinkedList {
 public:
     Song* head;
@@ -46,11 +53,12 @@ public:
         return "";
     }
 };
+
 class MusicPlayer {
 private:
     DoublyLinkedList songs;
     std::stack<Song*> history;
-    std::queue<Song*> playlist;
+    std::map<std::string, std::queue<Song*>> playlists;
 
 public:
     void addSong(const std::string& title) {
@@ -79,36 +87,111 @@ public:
         }
     }
 
-    void addToPlaylist(const std::string& title) {
-        Song* newSong = new Song(title);
-        playlist.push(newSong);
+    void createPlaylist(const std::string& playlistName) {
+        if (playlists.find(playlistName) == playlists.end()) {
+            playlists[playlistName] = std::queue<Song*>();
+            std::cout << "Playlist '" << playlistName << "' created." << std::endl;
+        } else {
+            std::cout << "Playlist '" << playlistName << "' already exists." << std::endl;
+        }
     }
 
-    void playFromPlaylist() {
-        if (!playlist.empty()) {
-            Song* nextInQueue = playlist.front();
-            playlist.pop();
-            std::cout << "Playing from playlist: " << nextInQueue->title << std::endl;
+    void addToPlaylist(const std::string& playlistName, const std::string& title) {
+        if (playlists.find(playlistName) != playlists.end()) {
+            Song* newSong = new Song(title);
+            playlists[playlistName].push(newSong);
+            std::cout << "Song '" << title << "' added to playlist '" << playlistName << "'." << std::endl;
         } else {
-            std::cout << "Playlist is empty." << std::endl;
+            std::cout << "Playlist '" << playlistName << "' does not exist." << std::endl;
+        }
+    }
+
+    void removeFromPlaylist(const std::string& playlistName) {
+        if (playlists.find(playlistName) != playlists.end() && !playlists[playlistName].empty()) {
+            Song* songToRemove = playlists[playlistName].front();
+            playlists[playlistName].pop();
+            delete songToRemove;  // Free the memory
+            std::cout << "Removed song from playlist '" << playlistName << "'." << std::endl;
+        } else {
+            std::cout << "Playlist '" << playlistName << "' is empty or does not exist." << std::endl;
+        }
+    }
+
+    void playFromPlaylist(const std::string& playlistName) {
+        if (playlists.find(playlistName) != playlists.end() && !playlists[playlistName].empty()) {
+            Song* nextInQueue = playlists[playlistName].front();
+            playlists[playlistName].pop();
+            std::cout << "Playing from playlist '" << playlistName << "': " << nextInQueue->title << std::endl;
+            delete nextInQueue;  // Free the memory
+        } else {
+            std::cout << "Playlist '" << playlistName << "' is empty or does not exist." << std::endl;
         }
     }
 };
+
 int main() {
     MusicPlayer player;
-    player.addSong("Song 1");
-    player.addSong("Song 2");
-    player.addSong("Song 3");
+    int choice;
+    std::string title;
+    std::string playlistName;
 
-    player.playNext(); 
-    player.playNext(); 
-    player.playPrev(); 
+    while (true) {
+        std::cout << "Choose from the options below:\n";
+        std::cout << "1: Add Song\n";
+        std::cout << "2: Play Next\n";
+        std::cout << "3: Play Previous\n";
+        std::cout << "4: Create Playlist\n";
+        std::cout << "5: Add to Playlist\n";
+        std::cout << "6: Remove from Playlist\n";
+        std::cout << "7: Play from Playlist\n";
+        std::cout << "8: Exit\n";
+        std::cout << "Choice: ";
+        std::cin >> choice;
+        std::cin.ignore();  // Ignore newline character left in the buffer
 
-    player.addToPlaylist("Song 4");
-    player.addToPlaylist("Song 5");
-
-    player.playFromPlaylist();
-    player.playFromPlaylist(); 
+        switch (choice) {
+            case 1:
+                std::cout << "Enter song title: ";
+                std::getline(std::cin, title);
+                player.addSong(title);
+                break;
+            case 2:
+                player.playNext();
+                break;
+            case 3:
+                player.playPrev();
+                break;
+            case 4:
+                std::cout << "Enter playlist name: ";
+                std::getline(std::cin, playlistName);
+                player.createPlaylist(playlistName);
+                break;
+            case 5:
+                std::cout << "Enter playlist name: ";
+                std::getline(std::cin, playlistName);
+                std::cout << "Enter song title to add to playlist: ";
+                std::getline(std::cin, title);
+                player.addToPlaylist(playlistName, title);
+                break;
+            case 6:
+                std::cout << "Enter playlist name: ";
+                std::getline(std::cin, playlistName);
+                player.removeFromPlaylist(playlistName);
+                break;
+            case 7:
+                std::cout << "Enter playlist name: ";
+                std::getline(std::cin, playlistName);
+                player.playFromPlaylist(playlistName);
+                break;
+            case 8:
+                std::cout << "Exiting..." << std::endl;
+                return 0;
+            default:
+                std::cout << "Invalid command. Please try again." << std::endl;
+                break;
+        }
+    }
 
     return 0;
 }
+
